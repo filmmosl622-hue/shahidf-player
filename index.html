@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>مشغل شاهد</title>
+  <!-- استدعاء مكتبة Shaka Player وتصميمها -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.3.5/shaka-player.compiled.js"></script>
+  <style>
+    body {
+      margin: 0;
+      background-color: #000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    div[data-shaka-player-container] {
+      width: 100%;
+      max-width: 1000px;
+    }
+    video {
+      width: 100%;
+      height: auto;
+    }
+  </style>
+</head>
+<body>
+
+  <div data-shaka-player-container>
+    <video data-shaka-player id="video" autoplay controls></video>
+  </div>
+
+  <script>
+    const manifestUri = 'https://mbcvod-enc.edgenextcdn.net/vod/aws/3060004302-STXML/e94454f5219e4e47b0ce9c4ec0b4d2a6/226eaf4a243f4bfb9ebb0bec3ac58d43/f93a7f08a52a4bab90cd98ed665b3f52/index.mpd?audio_language=ar&subtitle_language=en,ar&video_codec=H264&video_framerate=25-25&video_height=144-1080';
+
+    async function initApp() {
+      shaka.polyfill.installAll();
+      if (!shaka.Player.isBrowserSupported()) {
+        console.error('المتصفح لا يدعم Shaka Player!');
+        return;
+      }
+
+      const video = document.getElementById('video');
+      const player = new shaka.Player(video);
+
+      // مفتاح فك التشفير الجديد المستخرج من الأمر
+      player.configure({
+        drm: {
+          clearKeys: {
+            '4fea5663ab2a4786af8116cd961270e2': '6ce6b9c5cce8e8027782c37d3289e55e'
+          }
+        }
+      });
+
+      // الـ Headers المطلوبة لتجاوز حماية شاهد
+      player.getNetworkingEngine().registerRequestFilter((type, request) => {
+        request.headers['Origin'] = 'https://shahid.mbc.net';
+        request.headers['Referer'] = 'https://shahid.mbc.net/';
+        request.headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:159.0) Gecko/20100101 Firefox/159.0';
+      });
+
+      try {
+        await player.load(manifestUri);
+        console.log('تم تحميل الفيديو بنجاح!');
+      } catch (e) {
+        console.error('حدث خطأ أثناء التشغيل:', e);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', initApp);
+  </script>
+</body>
+</html>
